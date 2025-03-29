@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/iagosc/finance-api/api/models"
-	"github.com/iagosc/finance-api/config"
+	"gorm.io/gorm"
 )
 
 type TransactionService interface {
@@ -12,16 +12,19 @@ type TransactionService interface {
 	DeleteTransaction(id int64)
 }
 
-type transactionService struct{}
+type transactionService struct {
+	DB *gorm.DB
+}
 
-func NewTransactionService(env config.Env) *transactionService {
+func NewTransactionService(db *gorm.DB) *transactionService {
 	return &transactionService{
-		// DB: env.DB,
+		DB: db,
 	}
 }
 
 func (ts *transactionService) CreateTransaction(transaction models.Transaction) {
-	// ts.DB.Insert(transaction)
+	ret := ts.DB.Create(&transaction)
+	println("Transaction created:", &ret)
 }
 
 func (ts *transactionService) GetTransaction(id int64) models.Transaction {

@@ -17,6 +17,8 @@ func NewTransactionController(service services.TransactionService) *TransactionC
 }
 
 func (tc *TransactionController) CreateTransaction(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	var transaction models.Transaction
 	if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
 		w.WriteHeader(http.StatusBadRequest)

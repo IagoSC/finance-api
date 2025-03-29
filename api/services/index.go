@@ -1,5 +1,7 @@
 package services
 
+import "gorm.io/gorm"
+
 type service struct {
-	DB
+	DB *gorm.DB
 }

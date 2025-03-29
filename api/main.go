@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/iagosc/finance-api/api/controllers"
+	"github.com/iagosc/finance-api/api/models"
 	"github.com/iagosc/finance-api/api/routes"
 	"github.com/iagosc/finance-api/api/services"
 	"github.com/iagosc/finance-api/config"
@@ -14,29 +15,49 @@ import (
 )
 
 func main() {
-	server(os.Args[1])
-	log.Println("Starting server on :8080")
+	initServer(".env")
 }
 
-func server(envPath string) {
-	env := config.LoadConfig(envPath)
+func initServer(envPath string) {
+	env := config.LoadConfig(&envPath)
 	router, shutdown := create(env)
 	defer shutdown()
 
-	if err := http.ListenAndServe(env.Port, router); err != nil {
-		log.Fatalf("Could not start server: %s\n", err)
+	log.Printf("Starting server on :%s\n", env.Port)
+	if err := http.ListenAndServe(":"+env.Port, router); err != nil {
+		log.Fatalf("Could not start server:\n\t ERROR %s\n", err)
 	}
 }
 
 func create(env *config.Env) (*http.ServeMux, func()) {
 	r := http.NewServeMux()
 
-	gorm.Open(postgres.Open(postgres.Config{
-		DSN: env.DatabaseURL,
-	}), &gorm.Config{})
-	routes.SetupTransactionRouter(r, controllers.NewTransactionController(services.NewTransactionService()))
+	db, err := gorm.Open(postgres.Open(env.DatabaseURL), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Could not connect to database:\n\t ERROR %s\n", err)
+	}
 
-	shutdown := func() {}
+	db.AutoMigrate(&models.Transaction{}) // TODO: Remove
+
+	routes.SetupTransactionRouter(
+		r,
+		controllers.NewTransactionController(
+			services.NewTransactionService(db),
+		),
+	)
+	routes.SetDefaultHandler(r)
+
+	shutdown := func() {
+		if db != nil {
+			sqlDB, err := db.DB()
+			if err != nil {
+				log.Printf("Could not get database connection:\n\t ERROR %s\n", err)
+			}
+			sqlDB.Close()
+		}
+		log.Println("Server shutdown")
+		os.Exit(0)
+	}
 
 	return r, shutdown
 }

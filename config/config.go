@@ -12,11 +12,18 @@ type Env struct {
 	Port        string
 }
 
-func LoadConfig(path string) *Env {
-	err := godotenv.Load(path)
-	if err != nil {
-		log.Fatal("Error loading .env file")
+func LoadConfig(path *string) *Env {
+	var envPath string
+	if path != nil {
+		envPath = *path
+	} else {
+		envPath = ".env"
 	}
+	err := godotenv.Load(envPath)
+	if err != nil {
+		log.Fatalf("Error loading %s file", *path)
+	}
+	log.Println("Environment loaded from ", envPath)
 
 	return &Env{
 		DatabaseURL: os.Getenv("DATABASE_URL"),
