@@ -5,37 +5,29 @@ import (
 	"gorm.io/gorm"
 )
 
-type TransactionService interface {
-	CreateTransaction(transaction models.Transaction)
-	GetTransaction(id int64) models.Transaction
-	UpdateTransaction(transaction models.Transaction)
-	DeleteTransaction(id int64)
-}
-
 type transactionService struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
 func NewTransactionService(db *gorm.DB) *transactionService {
 	return &transactionService{
-		DB: db,
+		db: db,
 	}
 }
 
 func (ts *transactionService) CreateTransaction(transaction models.Transaction) {
-	ret := ts.DB.Create(&transaction)
-	println("Transaction created:", &ret)
+	ts.db.Create(&transaction)
 }
 
-func (ts *transactionService) GetTransaction(id int64) models.Transaction {
-	// return ts.DB.Find(id)
-	return models.Transaction{}
+func (ts *transactionService) GetTransactionById(id int64) (t models.Transaction) {
+	ts.db.Find(&t, id)
+	return
 }
 
 func (ts *transactionService) UpdateTransaction(transaction models.Transaction) {
-	// ts.DB.Update(transaction)
+	ts.db.Save(&transaction)
 }
 
 func (ts *transactionService) DeleteTransaction(id int64) {
-	// ts.DB.Delete(id)
+	ts.db.Delete(id)
 }

@@ -37,16 +37,20 @@ func create(env *config.Env) (*http.ServeMux, func()) {
 		log.Fatalf("Could not connect to database:\n\t ERROR %s\n", err)
 	}
 
-	db.AutoMigrate(&models.Transaction{}) // TODO: Remove
+	db.AutoMigrate(&models.Transaction{}) // TODO: Remove automigrate
 
-	routes.SetupTransactionRouter(
-		r,
-		controllers.NewTransactionController(
-			services.NewTransactionService(db),
+	r.Handle("/transactions/",
+		http.StripPrefix("/transactions",
+			routes.SetupTransactionRouter(
+				controllers.NewTransactionController(
+					services.NewTransactionService(db),
+				),
+			),
 		),
 	)
-	routes.SetDefaultHandler(r)
-
+	r.Handle("/",
+		routes.SetDefaultHandler(),
+	)
 	shutdown := func() {
 		if db != nil {
 			sqlDB, err := db.DB()
